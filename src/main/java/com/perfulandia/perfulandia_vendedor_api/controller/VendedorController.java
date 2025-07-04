@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.hateoas.*;
 
 
 
@@ -49,5 +50,30 @@ public class VendedorController {
         return ResponseEntity.ok(actualizado);
     }
     
+    @GetMapping("/hateoas/{id}")
+    public ResponseEntity<VendedorDTO> obtenerHATEOAS(@PathVariable Integer id) {
+        return Service.obtenerVendedorPorId(id)
+            .map(dto -> {
+                dto.add(Link.of("http://localhost:8888/api/proxy/vendedor/" + dto.getId()).withSelfRel());
+                dto.add(Link.of("http://localhost:8888/api/proxy/vendedor/" + dto.getId()).withRel("Modificar HATEOAS").withType("PUT"));
+                dto.add(Link.of("http://localhost:8888/api/proxy/vendedor/" + dto.getId()).withRel("Eliminar HATEOAS").withType("DELETE"));
+                return ResponseEntity.ok(dto);
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    
+    @GetMapping("/hateoas")
+    public List<VendedorDTO> obtenerTodosHATEOAS() {
+        List<VendedorDTO> lista = Service.obtenerTodosVendedores();
+
+        for (VendedorDTO dto : lista) {
+            
+            dto.add(Link.of("http://localhost:8888/api/proxy/vendedor").withRel("Get todos HATEOAS"));
+            dto.add(Link.of("http://localhost:8888/api/proxy/vendedor/" + dto.getId()).withRel("Crear HATEOAS").withType("POST"));
+        }
+
+        return lista;
+    }
     
 }
